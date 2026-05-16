@@ -8,3 +8,54 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+
+
+# Carga de las librerías:
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(pacman)
+library(readr)
+
+```
+
+# Cargar el fichero de datos a un data frame.
+
+```{r}
+
+# o read.delim()
+fich<- read_tsv("data/NosAutoanalizamos2022 - Hoja1.tsv")
+
+
+da<-as.data.frame(fich)
+head(da)
+
+# El df contendrá las columnas con variables y las filas que contengan datos.
+# Seleccionamos desde la fila 25 hasta el final:
+datos<- da[25:nrow(da),]
+
+head(datos)
+
+
+
+
+```
+
+
+# 4. Eliminamos el usuario cuyo id es martsobm:
+
+```{r}
+datos<- datos%>% filter(...3 != "martsobm")
+
+head(datos)
+```
+
+
+# 5. Seleccionar las columas con las calificaciones
+
+
+
