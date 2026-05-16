@@ -1,0 +1,10 @@
+---
+title: "NosAnalizamos"
+author: "María Martínez Marí"
+date: "2026-05-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
