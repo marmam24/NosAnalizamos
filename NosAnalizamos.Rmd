@@ -32,13 +32,21 @@ fich<- read_tsv("data/NosAutoanalizamos2022 - Hoja1.tsv")
 
 
 da<-as.data.frame(fich)
-head(da)
+head(da, 3)
 
 # El df contendrá las columnas con variables y las filas que contengan datos.
-# Seleccionamos desde la fila 25 hasta el final:
-datos<- da[25:nrow(da),]
+# Vemos que el nombre de las columnas están en la fila 24:
 
-head(datos)
+# Seleccionamos desde la fila 25 hasta el final:
+datos<- da[24:nrow(da),]
+colnames(datos)<- datos[1,]
+datos<-datos[-1,] #Quitamos la fila 24
+
+datos <- datos %>%
+  rename(Registro = 1)  # Esto cambia la columna 1 por "Registro"
+
+
+head(datos, 5)
 
 
 
@@ -49,13 +57,32 @@ head(datos)
 # 4. Eliminamos el usuario cuyo id es martsobm:
 
 ```{r}
-datos<- datos%>% filter(...3 != "martsobm")
+datos_final <- datos %>% 
+  filter(Id != "martsobm")
 
-head(datos)
+head(datos_final)
 ```
 
 
-# 5. Seleccionar las columas con las calificaciones
+# 5. Seleccionar las columas con las calificaciones y adecúalas.
+
+```{r}
+# Separador decimal es el punto.
+# Si alguna calificación es NC se sustituirá por 3.
+# Valor no conocido se sustituirá por NA
+
+# Vemos que de la 14 a la 20 son notas
+datos <- datos %>%
+  mutate
 
 
+```
+
+
+# 6. Obtener una tabla de estadísticos de estas variables.
+Primera columna las asignaturas y las siguientes asignaturas que correspondan con los estadísticos.
+
+```{r}
+
+```
 
