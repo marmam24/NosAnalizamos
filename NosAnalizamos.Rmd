@@ -2,7 +2,9 @@
 title: "NosAnalizamos"
 author: "María Martínez Marí"
 date: "2026-05-16"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -98,6 +100,8 @@ notas <- datos_final %>%
   mutate(across(all_of(variables_notas), as.numeric))
 
 head(notas)
+
+saveRDS(notas, "Notas.Rdata")
 ```
 
 
@@ -132,7 +136,306 @@ tabla_est
 ```{r}
 
 library(GGally)
+est %>% pairs()
+
+```
+#8. Determina las matrices de correlación y covarianza de dichas variables, con las opciones "Spearman" y "Pearson" e indica qué  pares de variables tienen la correlación más alta. 
+
+
+```{r}
+# Matriz de correlación
+est %>% ggcorr(label = TRUE)
+
+# Vemos que el par de variables que tienen una mayor correlación es FP con MD, MD y ALG y ALG con ANM.
+
+
+# Matriz de covarianza:
+cov(est, use= "complete.obs") %>% round(2)
 
 
 ```
+
+# 9. Representa en una misma gráfica los boxplots con las calificaciones obtenidas en las diferentes asignaturas.
+
+
+```{r}
+Asignatura_Nota<-pivot_longer(est, cols= names(est),
+               names_to= "Asignatura",
+               values_to= "Nota") 
+
+Asignatura_Nota%>%
+  ggplot(aes(x=Asignatura, y=Nota, color= Asignatura)) + geom_boxplot()
+  
+
+```
+
+# 10. Añade la variable sexo al conjunto de datos y realiza la representación del boxplot de calificaciones por asignatura coloreando según dicha variable.
+
+```{r}
+
+pivot_longer(notas, cols = names(notas[,14:18]),
+               names_to = "Asignatura",
+               values_to = "Nota") %>%
+  ggplot(aes(Asignatura, Nota, fill = Sex)) +
+  geom_boxplot()
+
+```
+# 11. Selecciona los alumnos que tengan calificaciones en todas las asignaturas y represéntalas gráficamente.  En el eje X aparecerá el usuario del alumno (girado 90º) y en el eje Y la calificación numérica con un color distinto para cada asignatura. Se mostrará un diagrama de líneas, que una las calificaciones de una misma asignatura para todos los alumnos así como un punto, por asignatura (del mismo color que las líneas), para cada asignatura y alumno.
+
+```{r}
+names(notas)
+
+alumnos <- notas %>% select(Id, ALG, ANM, FP, DCS, MD) %>% filter(complete.cases(.))
+col_nota<- alumnos %>% pivot_longer(cols = c(ALG, ANM, FP, DCS, MD),
+                                    names_to= "Asignatura", 
+                                    values_to = "Nota")
+
+
+col_nota %>%
+  # group = Asignatura así une puntos en líneas
+  ggplot(aes(x = Id, y = Nota, color = Asignatura, group = Asignatura)) +
+  geom_line() +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+
+```{r}
+
+fich2<-read_tsv("./data/NosAutoanalizamos2026 - NosAutoanalizamos.tsv")
+
+df2<-as.data.frame(fich2)
+
+
+
+# Realizamos el mismo proceso:
+# Seleccionamos desde la fila 25 hasta el final:
+datos2<- df2[24:nrow(df2),]
+colnames(datos2)<- datos2[2,]
+datos2<-datos2[-(1:3),] #Quitamos la fila 24, 25 y 26
+
+head(datos2)
+
+# Cambiamos el nombre de la columna
+colnames(datos2)[1] <- "FechaNac"
+
+```
+# 12. Sin hacer ninguna modificación en el código utiliza el fichero correspondiente al año 2026 y compara los resultados con los del curso 2022
+
+```{r}
+col_nota2 <- datos2 %>%
+  select(Id, ALG, ANM, FP, DCS, MD) %>%
+  filter(complete.cases(.)) %>%
+  mutate(across(c(ALG, ANM, FP, DCS, MD), as.numeric)) %>%
+  pivot_longer(cols = c(ALG, ANM, FP, DCS, MD),
+               names_to = "Asignatura",
+               values_to = "Nota") %>%
+  mutate(Curso = "2026")
+
+col_nota2
+
+c<-col_nota %>% mutate(Curso= "2022")
+c
+
+# Unimos los df para hacer la grafica
+total<- bind_rows(col_nota2, c)
+head(total)
+
+
+
+total %>%
+  ggplot(aes(x = Id, y = Nota, color = Asignatura, group = Asignatura)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Curso) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+# 13. Responde a las siguientes preguntas, utilizando los datos del curso 2026.  Ten en cuenta que deberás hacer correcciones en los datos en aquellos casos en los que los valores introducidos contengan errores. Por ejemplo si en las instrucción se indica que para el sexo de nacimiento los valores posibles son M y F, cualquier otro valor deberá ser corregido.  Si la corrección no es posible sustituye por NA. Debes justificar todas las cuestiones con los datos disponibles.
+
+a. ¿Qué edad, expresada en años (con decimales) tiene el alumno más joven a fecha 01/02/2026.
+
+```{r}
+names(datos2)
+head(datos2)
+ncol(datos2)
+datos2<-datos2[,-(22:23)]
+
+
+ 
+# Definimos la fecha objetivo
+fecha_objetivo <- dmy("01-02-2026")
+fecha_objetivo
+datos2$FechaNac <- dmy(datos2$FechaNac)
+
+
+
+# Calculamos edad exacta a 01/02/2026
+datos2 <- datos2 %>%
+  mutate(
+    EDAD_decimales = as.numeric(fecha_objetivo - FechaNac) / 365.25) %>% arrange(EDAD_decimales)
+
+head(datos2)
+
+#La edad del usuario más joven es 18.12183
+
+```
+
+
+b. Cuántos alumnos simultanean trabajo y estudios.
+
+```{r}
+
+names(datos2)
+
+
+datos2$Hwork<-as.numeric(datos2$Hwork)
+
+
+t_e<- datos2 %>% filter(Hwork>0) %>% distinct()
+nrow(t_e) # 14 alumnos realizan trabajos y estudios
+```
+
+c. Hay más hombres o más mujeres fumadoras.
+
+
+```{r}
+
+fumadores<- datos2 %>% filter(Smoke==  "Si")
+fumadores
+table(fumadores$Sex)
+# Vemos que solo hay hombres fumadores.
+
+```
+
+d. Cuál es el valor medio y la varianza de la variable Wr.Hnd según el sexo.
+
+```{r}
+
+str(datos2)
+datos2$Wr.Hnd<-as.numeric(datos2$Wr.Hnd)
+
+
+wr<- datos2 %>% group_by(Sex)%>%
+  summarise(
+    Media= mean(Wr.Hnd, na.rm=TRUE),
+    Varianza= var(Wr.Hnd, na.rm=TRUE)
+  )
+
+
+wr
+```
+
+e. Determina si existe relación entre el sexo y la mano con la que se escribe  (NW.Hnd)
+```{r}
+# Son dos variables categóricas, entonces podemos utilizar varias
+
+datos2$NW.Hnd <- tolower(datos2$NW.Hnd)
+
+chisq.test(datos2$Sex, datos2$NW.Hnd)
+# Vemos que  p-value = 0.4169, por tanto aceptamos la hipótesis de que son independientes.
+
+```
+f. Existe una relación lineal entre la altura (Height) y la distancia del extremo del meñique al extremo del pulgar de la mano con la que escribimos (Wr.Hnd)
+
+```{r}
+datos2$Height<-as.numeric(datos2$Height) 
+
+datos2$Wr.Hnd<-as.numeric(datos2$Wr.Hnd) 
+
+cor(datos2$Height, datos2$Wr.Hnd, use= "complete.obs", method= "pearson")
+
+# Nos da 0.3407237, y vemos que sí que existe pero no es tan fuerte.
+
+```
+g.El identificador de Hampel detecta algún outlier en la variable altura.
+
+```{r}
+
+
+madm <- function(x, na.rm=T) { 
+  1.4826*median(abs(x-median(x, na.rm = na.rm)), na.rm = na.rm)}
+
+# Identificador Hampel
+reglahampel <- function(x) {
+  #Calcula la mediana y la MADM (Median Absolute Deviation from the Median), 
+  #excluyendo NA.
+  median_x <- median (x, na.rm = TRUE)
+  mad_m <- madm(x)
+  #Calculamos el límite superior e inferior.
+  upper_limit <- median_x + 3 * mad_m
+  lower_limit <- median_x - 3 * mad_m
+  #Identificamos los outliers
+  outliers1 <- x > upper_limit | x < lower_limit
+  return (outliers1)}
+
+
+reglahampel(datos2$Height)
+
+# Vemos que no existe ningún outliers en la variable "Height".
+```
+
+h. Considera la asignatura FP. Si queremos realizar una imputación generalizada usando la media, ¿qué valor deberíamos utilizar ?
+
+```{r}
+
+#Sustituir los valores faltantes por la media de FP.
+
+datos2$FP<-as.numeric(datos2$FP)
+media_FP<-mean(datos2$FP, na.rm=TRUE)
+media_FP
+Imp<- datos2 %>% filter(is.na(FP))
+
+# imputación por la media
+Imputacion_datos2 <- datos2 %>%
+  mutate(FP = ifelse(
+      is.na(FP),
+      media_FP,
+      FP
+    ))
+
+
+
+any(is.na(Imputacion_datos2$FP))
+
+```
+
+i. Define una nueva variable (PulseCat) a partir del ritmo cardíaco (Pulse), con dos valores PulseH, si Pulse>=65 y PulseL si Pulse<65. ¿Qué valores utilizarías para imputar los valores faltantes de las notas de FP, dependiendo del valor de PulseCat (imputación por casos similares)
+```{r}
+datos2$Pulse <- as.numeric(datos2$Pulse)
+
+Pulse<-datos2%>% mutate(
+  PulseCat= if_else(
+    Pulse >= 65,
+    "PulseH",
+    "PulseL"))
+
+
+# Valores de imputación por grupo
+imputacion_FP <- Pulse %>%
+  group_by(PulseCat) %>%
+  summarise(
+    media_FP = mean(FP, na.rm = TRUE))
+
+
+imputacion_FP
+
+
+# La media de las notasd de FP de cada valor segun tengan PulseH o PulseL
+```
+j. ¿Qué podemos decir, como científicos de datos, ante esta frase referida a nuestros datos ? "El ritmo cardíaco está ligado con la cantidad de sangre que llega al cerebro, por tanto existirá una relación lineal directa esta esta variable y las calificaciones obtenidas en ALG"
+
+```{r}
+# 2 variables numéricas.
+
+class(datos2$Pulse)
+class(datos2$ALG)
+datos2$ALG<- as.numeric(datos2$ALG)
+
+# Utilizamos la correlación de Pearson o de Speraman.
+cor(datos2$Pulse, datos2$ALG, use="complete.obs", method= "spearman")
+
+```
+Vemos que es una relación positiva pero muy cercana a 0, por tanto no podemos afirmar que exita una relación directa entre estas dos variables.
 
