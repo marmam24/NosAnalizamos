@@ -20,6 +20,7 @@ library(ggplot2)
 library(lubridate)
 library(pacman)
 library(readr)
+library(stringr)
 
 ```
 
@@ -71,11 +72,32 @@ head(datos_final)
 # Si alguna calificación es NC se sustituirá por 3.
 # Valor no conocido se sustituirá por NA
 
-# Vemos que de la 14 a la 20 son notas
-datos <- datos %>%
-  mutate
+# Creamos el vector con el nombre de las columnas que contienen las calificaciones.
+variables_notas <- c("ALG","ANM","FP","DCS","MD")
 
 
+# Vemos que de las columnas 14 a la 20 son notas
+notas <- datos_final %>%
+  # mutate() Modificamos las columnas
+  # across() se aplica en varias columnas la misma operacion
+  # all_of () que trabajamos solo con esas asignaturas.
+  # ifelse(condicion, valor si sí, valor sino) 
+  # El primer punto significa todas las columnas
+  # El tercer punto indica que se quede como está
+  # ~ este símbolo indica que ahora viene una función
+  mutate(across(all_of(variables_notas),
+                ~ ifelse(. == "NC", "3", .))) %>%
+  
+  # Expresión regular: Permite números como 5, 7.2 etc.
+  
+  mutate(across(all_of(variables_notas),
+                ~ ifelse(str_detect(., "^[0-9]+(\\.[0-9]+)?$"), ., NA))) %>%
+
+  # convertir a numérico
+  
+  mutate(across(all_of(variables_notas), as.numeric))
+
+head(notas)
 ```
 
 
@@ -83,6 +105,34 @@ datos <- datos %>%
 Primera columna las asignaturas y las siguientes asignaturas que correspondan con los estadísticos.
 
 ```{r}
+
+est <- notas[, 14:18]
+
+tabla_est <- data.frame(
+  Asignatura = names(est),
+  # con sapply() aplicamos una funcion a cada columna y devuelve el resultado
+  Minimo = sapply(est, min, na.rm = TRUE),
+  P25 = sapply(est, quantile, probs = 0.25, na.rm = TRUE),
+  Mediana = sapply(est, median, na.rm = TRUE),
+  Media = sapply(est, mean, na.rm = TRUE),
+  DesvTipica = sapply(est, sd, na.rm = TRUE),
+  P75 = sapply(est, quantile, probs = 0.75, na.rm = TRUE),
+  Maximo = sapply(est, max, na.rm = TRUE)
+) 
+
+tabla_est <- tabla_est %>%
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+
+tabla_est
+```
+# 7.  la función ggpairs de la librería GGally y representa las relaciones entre todas las variables.
+
+
+```{r}
+
+library(GGally)
+
 
 ```
 
